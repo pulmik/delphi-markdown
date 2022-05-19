@@ -253,7 +253,7 @@ type
     procedure render(parent : TCMBlock; b : TStringBuilder); override;
   end;
 
-  TTextAlign = (taLeft, taCenter, taRight);
+  TTextAlign = (taLeft, taCenter, taRight, taNone);
 
   // contained blocks are rows. The first row is the title row
   TCMTableBlock = class (TCMContainerBlock)
@@ -3372,8 +3372,12 @@ begin
     s := a[i].Trim;
     if s.StartsWith(':') and s.EndsWith(':') then
       t.FColumns[i] := taCenter
-    else if s.EndsWith(':') then
+    else
+    if s.EndsWith(':') then
       t.FColumns[i] := taRight
+    else
+    if s.StartsWith(':') then
+      t.FColumns[i] := taLeft
     else
       t.FColumns[i] := taLeft;
   end;
@@ -3673,7 +3677,8 @@ begin
   for i := 0 to length((parent as TCMTableBlock).FColumns) - 1 do
   begin
     case (parent as TCMTableBlock).FColumns[i] of
-      taLeft : attr := '';
+      taNone : attr := '';
+      taLeft : attr := ' align="left"';
       taCenter : attr := ' align="center"';
       taRight : attr := ' align="right"';
     end;
