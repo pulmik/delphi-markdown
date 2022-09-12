@@ -3,7 +3,7 @@ unit MarkdownPrepareHtml;
 interface
 
 uses
-  System.Classes, System.SysUtils, MarkdownProcessor;
+  System.Classes, System.SysUtils, MarkdownProcessor, System.Types, MarkdownCommonMark, System.Generics.Collections;
 
 type
   TPrepareMarkdown = class
@@ -13,6 +13,7 @@ type
     FHtml: TStrings;
     FTitle: String;
     procedure InitTemplate;
+    function RenderText(blocks: TObjectList<TCMBlock>): String;
   protected
   public
     constructor Create;
@@ -24,6 +25,7 @@ type
     property Title: String read FTitle write FTitle;
 
     procedure Process;
+    procedure ProcessEx;
   end;
 
 procedure PrepareMarkdownFile(const ATemplateFileName, ASourceFileName, AResultFileName: String);
@@ -89,7 +91,7 @@ begin
   Template.Add('<html lang="ru">');
   Template.Add('    <head>');
   Template.Add('        <title><!-- title --></title>');
-  Template.Add('        <meta charset="utf-8"/>');
+//  Template.Add('        <meta charset="utf-8"/>');
   Template.Add('        <link rel="stylesheet" href="markdown.css"/>');
   Template.Add('    </head>');
   Template.Add('    <body>');
@@ -113,6 +115,50 @@ begin
         .Replace('<!-- content -->', Processor.process(Source.Text), [rfIgnoreCase]);
   finally
     Processor.Free;
+  end;
+end;
+
+function TPrepareMarkdown.RenderText(blocks: TObjectList<TCMBlock>): String;
+begin
+  var ss: TStringDynArray := [];
+  for var block: TCMBlock in blocks do
+  begin
+    if block is TCMTextBlock then
+    begin
+      ss := ss + [TCMTextBlock(block).text];
+    end;
+  end;
+  Result := String.Join(' ', ss);
+end;
+
+procedure TPrepareMarkdown.ProcessEx;
+var
+  doc : TCommonMarkDocument;
+  content: String;
+begin
+  doc := TCommonMarkEngine.parse(Source.Text, true);
+  try
+    content := TCommonMarkEngine.render(doc);
+    if Title = '' then
+    begin
+      for var block: TCMBlock in doc.blocks do
+      begin
+        if block is TCMHeadingBlock then
+        begin
+          if TCMHeadingBlock(block).level = 1 then
+          begin
+            Title := Trim(RenderText(TCMHeadingBlock(block).blocks));
+            break;
+          end;
+        end;
+      end;
+    end;
+    Html.Text :=
+      Template.Text
+        .Replace('<!-- title -->', Title, [rfIgnoreCase])
+        .Replace('<!-- content -->', content, [rfIgnoreCase]);
+  finally
+    doc.Free;
   end;
 end;
 

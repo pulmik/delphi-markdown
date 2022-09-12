@@ -536,6 +536,9 @@ type
 
 implementation
 
+uses
+  System.NetEncoding;
+
 function null_loc : TLocation;
 begin
   result.line := 0;
@@ -1024,7 +1027,16 @@ begin
 end;
 
 procedure TCMHeadingBlock.render(parent : TCMBlock; b: TStringBuilder);
+var
+  bb: TStringBuilder;
 begin
+  bb := TStringBuilder.Create;
+  try
+    inherited render(parent, bb);
+    b.Append('<a name="' + TNetEncoding.URL.Encode(bb.ToString.Trim.Replace(' ', '-')) + '"></a>'#10);
+  finally
+    bb.Free;
+  end;
   b.Append('<h'+inttostr(FLevel)+'>');
   inherited render(parent, b);
   b.Append('</h'+inttostr(FLevel)+'>');
