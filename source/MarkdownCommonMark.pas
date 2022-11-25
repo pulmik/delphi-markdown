@@ -1033,7 +1033,8 @@ begin
   bb := TStringBuilder.Create;
   try
     inherited render(parent, bb);
-    b.Append('<a name="' + TNetEncoding.URL.Encode(bb.ToString.Trim.Replace(' ', '-')) + '"></a>'#10);
+    const LHrefName = TNetEncoding.URL.Encode(bb.ToString.Trim.ToLower.Replace(' ', '-'));
+    b.Append('<a name="' + LHrefName + '"></a>'#10);
   finally
     bb.Free;
   end;
